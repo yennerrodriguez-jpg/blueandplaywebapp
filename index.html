@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blueandplay Installer</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        body {
+            background-color: white; /* Required white background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container { text-align: center; padding: 20px; }
+        h1 { color: #0056b3; margin-bottom: 10px; }
+        /* Blue Games Brand Button */
+        .btn {
+            background-color: #0056b3; 
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover { background-color: #004494; }
+        #installBtn { display: none; } /* Hidden until PWA is ready */
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Blueandplay</h1>
+    <p>Install the app or continue to the site.</p>
+    
+    <!-- Manual Redirect Button -->
+    <a href="https://blueandplay.com" class="btn">Open Blueandplay</a>
+    
+    <!-- PWA Install Button -->
+    <button id="installBtn" class="btn">Install App</button>
+</div>
+
+<script>
+    const REDIRECT_URL = "https://blueandplay.com";
+
+    // 1. Instant Redirect based on Local Storage
+    // Use this to skip the install page if a user has already visited/installed
+    if (localStorage.getItem('autoRedirect') === 'true') {
+        window.location.replace(REDIRECT_URL);
+    }
+
+    // 2. PWA Install Logic
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.style.display = 'inline-block'; // Show button when ready
+    });
+
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                // Set flag so next time it redirects instantly
+                localStorage.setItem('autoRedirect', 'true');
+                window.location.href = REDIRECT_URL;
+            }
+            deferredPrompt = null;
+        }
+    });
+
+    // 3. Service Worker Registration (Required for PWA)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+    }
+</script>
+</body>
+</html>
